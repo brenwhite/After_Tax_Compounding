@@ -18,7 +18,7 @@ ACCENT_ALT = "rgb(150,140,131)"
 HIGHLIGHT = "rgb(150,140,131)"
 SUCCESS = "#000000"
 PAPER = "#FFFFFF"
-INK = "#102132"
+INK = "#000000"
 MUTED = "#5D6B7A"
 CARD = "#FFFFFF"
 BORDER = "#000000"
@@ -40,13 +40,16 @@ st.markdown(
             color: {INK};
             letter-spacing: -0.02em;
         }}
+        p, div, span, label {{
+            color: {INK};
+        }}
         .hero {{
-            background: linear-gradient(135deg, rgba(16, 33, 50, 0.98), rgba(31, 60, 136, 0.94));
-            border: 1px solid rgba(255,255,255,0.1);
+            background: rgb(150,140,131);
+            border: 1px solid {BORDER};
             border-radius: 24px;
             padding: 28px 30px 24px 30px;
-            color: white;
-            box-shadow: 0 20px 40px rgba(16, 33, 50, 0.12);
+            color: {INK};
+            box-shadow: none;
             margin-bottom: 1.25rem;
         }}
         .hero-kicker {{
@@ -57,14 +60,14 @@ st.markdown(
             margin-bottom: 10px;
         }}
         .hero h1 {{
-            color: white;
+            color: {INK};
             font-size: 2.4rem;
             margin: 0;
         }}
         .hero p {{
             font-size: 1rem;
             max-width: 920px;
-            opacity: 0.92;
+            opacity: 1;
             margin-top: 0.8rem;
             margin-bottom: 0;
         }}
@@ -74,7 +77,7 @@ st.markdown(
             border-radius: 20px;
             padding: 20px 22px;
             min-height: 128px;
-            box-shadow: 0 12px 28px rgba(16, 33, 50, 0.06);
+            box-shadow: none;
         }}
         .metric-label {{
             color: {MUTED};
@@ -90,7 +93,7 @@ st.markdown(
             line-height: 1.1;
         }}
         .metric-sub {{
-            color: {MUTED};
+            color: {INK};
             font-size: 0.95rem;
             margin-top: 8px;
         }}
@@ -108,6 +111,9 @@ st.markdown(
         [data-testid="stMetricValue"] {{
             color: {INK};
         }}
+        [data-testid="stMetricLabel"] {{
+            color: {INK};
+        }}
         div[data-testid="stDataFrame"] {{
             border-radius: 18px;
             overflow: hidden;
@@ -122,6 +128,10 @@ st.markdown(
         [data-testid="stDataFrame"] td {{
             background: #FFFFFF !important;
             border: none !important;
+        }}
+        .stPlotlyChart {{
+            background: #FFFFFF;
+            border-radius: 0;
         }}
     </style>
     """,
@@ -317,8 +327,8 @@ combined_tax_rate_pct = (federal_tax_rate + state_tax_rate) * 100
 st.markdown(
     """
     <div class="hero">
-        <div class="hero-kicker">Tax-Aware Portfolio Analysis</div>
-        <h1>Compare tax-aware investing against annual turnover-driven realization.</h1>
+        <div class="hero-kicker">Capital Gains Deferral Analysis</div>
+        <h1>Compare tax-deferred compounding against annual turnover-driven realization.</h1>
         <p>
             This model isolates the effect of realizing capital gains during the investment horizon.
             The Tax-Aware Portfolio compounds without annual tax drag, while the Non-Tax-Aware Portfolio
@@ -347,13 +357,13 @@ with top_cols[2]:
     metric_card(
         "Wealth Advantage",
         currency(ending_gap),
-        f"{percent((ending_gap / ending_taxable * 100) if ending_taxable else 0.0)} more dollars",
+        f"{percent((ending_gap / ending_taxable * 100) if ending_taxable else 0.0)} ahead of the non-tax-aware stream",
     )
 with top_cols[3]:
     metric_card(
         "Cumulative Taxes Paid",
         currency(ending_taxes),
-        f"{percent(combined_tax_rate_pct)} combined tax rate",
+        f"{percent(combined_tax_rate_pct)} combined tax rate on realized gains",
     )
 
 
@@ -384,10 +394,19 @@ with chart_col:
     )
     growth_fig.update_layout(
         height=480,
-        margin=dict(l=10, r=10, t=20, b=10),
+        margin=dict(l=10, r=10, t=70, b=10),
         paper_bgcolor="#FFFFFF",
         plot_bgcolor="#FFFFFF",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.08,
+            xanchor="left",
+            x=0,
+            bgcolor="rgba(255,255,255,0)",
+            borderwidth=0,
+            font=dict(color=INK),
+        ),
         xaxis_title="Year",
         yaxis_title="Account Value ($)",
         yaxis_tickprefix="$",
@@ -439,13 +458,22 @@ with bottom_left:
     )
     gap_fig.update_layout(
         height=360,
-        margin=dict(l=10, r=10, t=20, b=10),
+        margin=dict(l=10, r=10, t=50, b=10),
         paper_bgcolor="#FFFFFF",
         plot_bgcolor="#FFFFFF",
         xaxis_title="Year",
         yaxis_title="Value Difference ($)",
         yaxis_tickprefix="$",
         font=dict(color=INK),
+        legend=dict(
+            yanchor="bottom",
+            y=1.06,
+            xanchor="left",
+            x=0,
+            bgcolor="rgba(255,255,255,0)",
+            borderwidth=0,
+            font=dict(color=INK),
+        ),
         xaxis=dict(showgrid=False, zeroline=False, showline=True, linewidth=1, linecolor=BORDER, mirror=True),
         yaxis=dict(showgrid=False, zeroline=False, showline=True, linewidth=1, linecolor=BORDER, mirror=True),
     )
@@ -477,13 +505,22 @@ with bottom_right:
         )
     tax_fig.update_layout(
         height=360,
-        margin=dict(l=10, r=10, t=20, b=10),
+        margin=dict(l=10, r=10, t=50, b=10),
         paper_bgcolor="#FFFFFF",
         plot_bgcolor="#FFFFFF",
         xaxis_title="Year",
         yaxis_title="Dollars ($)",
         yaxis_tickprefix="$",
         font=dict(color=INK),
+        legend=dict(
+            yanchor="bottom",
+            y=1.06,
+            xanchor="left",
+            x=0,
+            bgcolor="rgba(255,255,255,0)",
+            borderwidth=0,
+            font=dict(color=INK),
+        ),
         xaxis=dict(showgrid=False, zeroline=False, showline=True, linewidth=1, linecolor=BORDER, mirror=True),
         yaxis=dict(showgrid=False, zeroline=False, showline=True, linewidth=1, linecolor=BORDER, mirror=True),
     )
