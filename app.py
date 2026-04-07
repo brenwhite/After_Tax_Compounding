@@ -13,24 +13,22 @@ st.set_page_config(
 )
 
 
-ACCENT = "#1F3C88"
-ACCENT_ALT = "#7A8FB8"
-HIGHLIGHT = "#0E7490"
-SUCCESS = "#166534"
-PAPER = "#F5F1E8"
+ACCENT = "#000000"
+ACCENT_ALT = "rgb(150,140,131)"
+HIGHLIGHT = "rgb(150,140,131)"
+SUCCESS = "#000000"
+PAPER = "#FFFFFF"
 INK = "#102132"
 MUTED = "#5D6B7A"
 CARD = "#FFFFFF"
-BORDER = "#D8DEE6"
+BORDER = "#000000"
 
 
 st.markdown(
     f"""
     <style>
         .stApp {{
-            background:
-                radial-gradient(circle at top left, rgba(31, 60, 136, 0.08), transparent 28%),
-                linear-gradient(180deg, #fbfaf7 0%, #f3efe7 100%);
+            background: #FFFFFF;
             color: {INK};
         }}
         .block-container {{
@@ -97,14 +95,14 @@ st.markdown(
             margin-top: 8px;
         }}
         .section-card {{
-            background: rgba(255, 255, 255, 0.92);
+            background: #FFFFFF;
             border: 1px solid {BORDER};
             border-radius: 22px;
             padding: 18px 20px 20px 20px;
-            box-shadow: 0 10px 30px rgba(16, 33, 50, 0.05);
+            box-shadow: none;
         }}
         [data-testid="stSidebar"] {{
-            background: linear-gradient(180deg, #f5f1e8 0%, #ece6d8 100%);
+            background: #FFFFFF;
             border-right: 1px solid {BORDER};
         }}
         [data-testid="stMetricValue"] {{
@@ -114,6 +112,16 @@ st.markdown(
             border-radius: 18px;
             overflow: hidden;
             border: 1px solid {BORDER};
+            background: #FFFFFF;
+        }}
+        [data-testid="stDataFrame"] table {{
+            background: #FFFFFF !important;
+            border-collapse: separate !important;
+        }}
+        [data-testid="stDataFrame"] th,
+        [data-testid="stDataFrame"] td {{
+            background: #FFFFFF !important;
+            border: none !important;
         }}
     </style>
     """,
@@ -228,14 +236,14 @@ with st.sidebar:
 
     default_start = 3_000_000.0
     start_deferred = st.number_input(
-        "Deferred account starting value",
+        "Tax-Aware Portfolio starting value",
         min_value=0.0,
         value=default_start,
         step=100_000.0,
         format="%.0f",
     )
     start_taxable = st.number_input(
-        "Taxable account starting value",
+        "Non-Tax-Aware Portfolio starting value",
         min_value=0.0,
         value=default_start,
         step=100_000.0,
@@ -313,8 +321,8 @@ st.markdown(
         <h1>Compare tax-deferred compounding against annual turnover-driven realization.</h1>
         <p>
             This model isolates the effect of realizing capital gains during the investment horizon.
-            The deferred account compounds without annual tax drag, while the taxable account applies
-            end-of-year taxes on realized gains based on the turnover ratio and user-defined tax rates.
+            The Tax-Aware Portfolio compounds without annual tax drag, while the Non-Tax-Aware Portfolio
+            applies end-of-year taxes on realized gains based on the turnover ratio and user-defined tax rates.
         </p>
     </div>
     """,
@@ -325,13 +333,13 @@ st.markdown(
 top_cols = st.columns(4)
 with top_cols[0]:
     metric_card(
-        "Deferred Ending Value",
+        "Tax-Aware Portfolio",
         currency(ending_deferred),
         f"{percent(comparison_df['Deferred Cumulative Return'].iloc[-1] * 100)} cumulative growth",
     )
 with top_cols[1]:
     metric_card(
-        "Taxable Ending Value",
+        "Non-Tax-Aware Portfolio",
         currency(ending_taxable),
         f"{percent(comparison_df['Taxable Cumulative Return'].iloc[-1] * 100)} after annual tax drag",
     )
@@ -339,7 +347,7 @@ with top_cols[2]:
     metric_card(
         "Wealth Advantage",
         currency(ending_gap),
-        f"{percent((ending_gap / ending_taxable * 100) if ending_taxable else 0.0)} ahead of the taxable stream",
+        f"{percent((ending_gap / ending_taxable * 100) if ending_taxable else 0.0)} ahead of the non-tax-aware stream",
     )
 with top_cols[3]:
     metric_card(
@@ -361,7 +369,7 @@ with chart_col:
             x=comparison_df["Year"],
             y=comparison_df["Deferred Account Value"],
             mode="lines",
-            name="Deferred compounding",
+            name="Tax-Aware Portfolio",
             line=dict(color=ACCENT, width=4),
         )
     )
@@ -370,20 +378,22 @@ with chart_col:
             x=comparison_df["Year"],
             y=comparison_df["Taxable Account Value"],
             mode="lines",
-            name="Taxable with turnover",
+            name="Non-Tax-Aware Portfolio",
             line=dict(color=HIGHLIGHT, width=4),
         )
     )
     growth_fig.update_layout(
         height=480,
         margin=dict(l=10, r=10, t=20, b=10),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(255,255,255,0)",
+        paper_bgcolor="#FFFFFF",
+        plot_bgcolor="#FFFFFF",
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
         xaxis_title="Year",
         yaxis_title="Account Value ($)",
         yaxis_tickprefix="$",
         font=dict(color=INK),
+        xaxis=dict(showgrid=False, zeroline=False, showline=True, linewidth=1, linecolor=BORDER, mirror=True),
+        yaxis=dict(showgrid=False, zeroline=False, showline=True, linewidth=1, linecolor=BORDER, mirror=True),
     )
     st.plotly_chart(growth_fig, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
@@ -393,10 +403,10 @@ with context_col:
     st.markdown("### Model Summary")
     st.markdown(
         f"""
-        - Starting values: deferred {currency(start_deferred)} and taxable {currency(start_taxable)}
+        - Starting values: Tax-Aware Portfolio {currency(start_deferred)} and Non-Tax-Aware Portfolio {currency(start_taxable)}
         - Gross return assumption: {percent(annual_return_pct)}
         - Horizon: {years} years
-        - Annual turnover in taxable account: {percent(turnover_pct)}
+        - Annual turnover in Non-Tax-Aware Portfolio: {percent(turnover_pct)}
         - Combined capital gains tax rate: {percent(combined_tax_rate_pct)}
         - Approximate annualized tax drag: {tax_drag_bps:,.0f} bps
         """
@@ -404,9 +414,9 @@ with context_col:
     st.markdown("### Assumption Notes")
     st.markdown(
         """
-        - Taxes are paid at year-end only in the turnover account.
+        - Taxes are paid at year-end only in the Non-Tax-Aware Portfolio.
         - Realized gains are modeled on a pro-rata basis using the account's embedded appreciation at the time of sale.
-        - The deferred account assumes no interim capital gains realization.
+        - The Tax-Aware Portfolio assumes no interim capital gains realization.
         - This version does not force liquidation at the end of the horizon, so it emphasizes the value of tax deferral during the holding period.
         """
     )
@@ -423,19 +433,21 @@ with bottom_left:
         go.Bar(
             x=comparison_df["Year"],
             y=comparison_df["Value Gap"],
-            name="Deferred wealth advantage",
+            name="Tax-Aware wealth advantage",
             marker_color=ACCENT_ALT,
         )
     )
     gap_fig.update_layout(
         height=360,
         margin=dict(l=10, r=10, t=20, b=10),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(255,255,255,0)",
+        paper_bgcolor="#FFFFFF",
+        plot_bgcolor="#FFFFFF",
         xaxis_title="Year",
         yaxis_title="Value Difference ($)",
         yaxis_tickprefix="$",
         font=dict(color=INK),
+        xaxis=dict(showgrid=False, zeroline=False, showline=True, linewidth=1, linecolor=BORDER, mirror=True),
+        yaxis=dict(showgrid=False, zeroline=False, showline=True, linewidth=1, linecolor=BORDER, mirror=True),
     )
     st.plotly_chart(gap_fig, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
@@ -459,19 +471,21 @@ with bottom_right:
                 x=comparison_df["Year"],
                 y=comparison_df["Taxable Cost Basis"],
                 mode="lines",
-                name="Taxable cost basis",
-                line=dict(color=MUTED, width=2, dash="dash"),
+                name="Non-Tax-Aware cost basis",
+                line=dict(color=ACCENT_ALT, width=2, dash="dash"),
             )
         )
     tax_fig.update_layout(
         height=360,
         margin=dict(l=10, r=10, t=20, b=10),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(255,255,255,0)",
+        paper_bgcolor="#FFFFFF",
+        plot_bgcolor="#FFFFFF",
         xaxis_title="Year",
         yaxis_title="Dollars ($)",
         yaxis_tickprefix="$",
         font=dict(color=INK),
+        xaxis=dict(showgrid=False, zeroline=False, showline=True, linewidth=1, linecolor=BORDER, mirror=True),
+        yaxis=dict(showgrid=False, zeroline=False, showline=True, linewidth=1, linecolor=BORDER, mirror=True),
     )
     st.plotly_chart(tax_fig, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
@@ -491,17 +505,30 @@ if show_table:
             "Taxable Cost Basis",
         ]
     ].copy()
+    display_df = display_df.rename(
+        columns={
+            "Deferred Account Value": "Tax-Aware Portfolio",
+            "Taxable Account Value": "Non-Tax-Aware Portfolio",
+            "Taxable Cost Basis": "Non-Tax-Aware Cost Basis",
+        }
+    )
 
     st.dataframe(
         display_df.style.format(
             {
-                "Deferred Account Value": "${:,.0f}",
-                "Taxable Account Value": "${:,.0f}",
+                "Tax-Aware Portfolio": "${:,.0f}",
+                "Non-Tax-Aware Portfolio": "${:,.0f}",
                 "Value Gap": "${:,.0f}",
                 "Taxes Paid This Year": "${:,.0f}",
                 "Cumulative Taxes Paid": "${:,.0f}",
-                "Taxable Cost Basis": "${:,.0f}",
+                "Non-Tax-Aware Cost Basis": "${:,.0f}",
             }
+        ).set_table_styles(
+            [
+                {"selector": "th", "props": [("border", "none"), ("background-color", "#FFFFFF")]},
+                {"selector": "td", "props": [("border", "none"), ("background-color", "#FFFFFF")]},
+                {"selector": "table", "props": [("border-collapse", "separate"), ("background-color", "#FFFFFF")]},
+            ]
         ),
         use_container_width=True,
         hide_index=True,
