@@ -244,7 +244,7 @@ def metric_card(label: str, value: str, subtext: str) -> None:
 
 @contextmanager
 def section_card():
-    with st.container(border=True):
+    with st.container(border=False):
         yield
 
 
