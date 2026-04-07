@@ -327,8 +327,8 @@ combined_tax_rate_pct = (federal_tax_rate + state_tax_rate) * 100
 st.markdown(
     """
     <div class="hero">
-        <div class="hero-kicker">Capital Gains Deferral Analysis</div>
-        <h1>Compare tax-deferred compounding against annual turnover-driven realization.</h1>
+        <div class="hero-kicker">Tax-Aware Investing Analysis</div>
+        <h1>Compare tax-aware investing against annual turnover-driven realization.</h1>
         <p>
             This model isolates the effect of realizing capital gains during the investment horizon.
             The Tax-Aware Portfolio compounds without annual tax drag, while the Non-Tax-Aware Portfolio
@@ -357,13 +357,13 @@ with top_cols[2]:
     metric_card(
         "Wealth Advantage",
         currency(ending_gap),
-        f"{percent((ending_gap / ending_taxable * 100) if ending_taxable else 0.0)} ahead of the non-tax-aware stream",
+        f"{percent((ending_gap / ending_taxable * 100) if ending_taxable else 0.0)} more dollars",
     )
 with top_cols[3]:
     metric_card(
         "Cumulative Taxes Paid",
         currency(ending_taxes),
-        f"{percent(combined_tax_rate_pct)} combined tax rate on realized gains",
+        f"{percent(combined_tax_rate_pct)} combined tax rate",
     )
 
 
@@ -371,7 +371,7 @@ chart_col, context_col = st.columns([1.65, 1])
 
 with chart_col:
     st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    st.markdown("### Growth of $1 Invested")
+    st.markdown("### Growth of Portfolio")
 
     growth_fig = go.Figure()
     growth_fig.add_trace(
