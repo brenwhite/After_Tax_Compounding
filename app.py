@@ -1,4 +1,5 @@
 import math
+from contextlib import contextmanager
 from dataclasses import dataclass
 
 import pandas as pd
@@ -19,7 +20,7 @@ HIGHLIGHT = "rgb(150,140,131)"
 SUCCESS = "#000000"
 PAPER = "#FFFFFF"
 INK = "#000000"
-MUTED = "#000000"
+MUTED = "#5D6B7A"
 CARD = "#FFFFFF"
 BORDER = "#000000"
 
@@ -241,6 +242,12 @@ def metric_card(label: str, value: str, subtext: str) -> None:
     )
 
 
+@contextmanager
+def section_card():
+    with st.container(border=True):
+        yield
+
+
 with st.sidebar:
     st.markdown("## Assumptions")
 
@@ -327,8 +334,8 @@ combined_tax_rate_pct = (federal_tax_rate + state_tax_rate) * 100
 st.markdown(
     """
     <div class="hero">
-        <div class="hero-kicker">Tax-Aware Investing Analysis</div>
-        <h1>Compare tax-aware investing against annual turnover-driven realization.</h1>
+        <div class="hero-kicker">Capital Gains Deferral Analysis</div>
+        <h1>Compare tax-deferred compounding against annual turnover-driven realization.</h1>
         <p>
             This model isolates the effect of realizing capital gains during the investment horizon.
             The Tax-Aware Portfolio compounds without annual tax drag, while the Non-Tax-Aware Portfolio
@@ -357,217 +364,266 @@ with top_cols[2]:
     metric_card(
         "Wealth Advantage",
         currency(ending_gap),
-        f"{percent((ending_gap / ending_taxable * 100) if ending_taxable else 0.0)} more dollars",
+        f"{percent((ending_gap / ending_taxable * 100) if ending_taxable else 0.0)} ahead of the non-tax-aware stream",
     )
 with top_cols[3]:
     metric_card(
         "Cumulative Taxes Paid",
         currency(ending_taxes),
-        f"{percent(combined_tax_rate_pct)} combined tax rate",
+        f"{percent(combined_tax_rate_pct)} combined tax rate on realized gains",
     )
 
 
 chart_col, context_col = st.columns([1.65, 1])
 
 with chart_col:
-    st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    st.markdown("### Growth of Portfolio")
+    with section_card():
+        st.markdown("### Growth of $1 Invested")
 
-    growth_fig = go.Figure()
-    growth_fig.add_trace(
-        go.Scatter(
-            x=comparison_df["Year"],
-            y=comparison_df["Deferred Account Value"],
-            mode="lines",
-            name="Tax-Aware Portfolio",
-            line=dict(color=ACCENT, width=4),
+        growth_fig = go.Figure()
+        growth_fig.add_trace(
+            go.Scatter(
+                x=comparison_df["Year"],
+                y=comparison_df["Deferred Account Value"],
+                mode="lines",
+                name="Tax-Aware Portfolio",
+                line=dict(color=ACCENT, width=4),
+            )
         )
-    )
-    growth_fig.add_trace(
-        go.Scatter(
-            x=comparison_df["Year"],
-            y=comparison_df["Taxable Account Value"],
-            mode="lines",
-            name="Non-Tax-Aware Portfolio",
-            line=dict(color=HIGHLIGHT, width=4),
+        growth_fig.add_trace(
+            go.Scatter(
+                x=comparison_df["Year"],
+                y=comparison_df["Taxable Account Value"],
+                mode="lines",
+                name="Non-Tax-Aware Portfolio",
+                line=dict(color=HIGHLIGHT, width=4),
+            )
         )
-    )
-    growth_fig.update_layout(
-        height=480,
-        margin=dict(l=10, r=10, t=70, b=10),
-        paper_bgcolor="#FFFFFF",
-        plot_bgcolor="#FFFFFF",
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.08,
-            xanchor="left",
-            x=0,
-            bgcolor="rgba(255,255,255,0)",
-            borderwidth=0,
-            font=dict(color=INK),
-        ),
-        xaxis_title="Year",
-        yaxis_title="Account Value ($)",
-        yaxis_tickprefix="$",
-        font=dict(color=INK),
-        xaxis=dict(showgrid=False, zeroline=False, showline=True, linewidth=1, linecolor=BORDER, mirror=True),
-        yaxis=dict(showgrid=False, zeroline=False, showline=True, linewidth=1, linecolor=BORDER, mirror=True),
-    )
-    st.plotly_chart(growth_fig, use_container_width=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+        growth_fig.update_layout(
+            height=480,
+            margin=dict(l=10, r=10, t=70, b=10),
+            paper_bgcolor="#FFFFFF",
+            plot_bgcolor="#FFFFFF",
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.08,
+                xanchor="left",
+                x=0,
+                bgcolor="rgba(255,255,255,0)",
+                borderwidth=0,
+                font=dict(color=INK, size=14),
+            ),
+            xaxis_title="Year",
+            yaxis_title="Account Value ($)",
+            yaxis_tickprefix="$",
+            font=dict(color=INK, size=16),
+            xaxis=dict(
+                showgrid=False,
+                zeroline=False,
+                showline=True,
+                linewidth=1,
+                linecolor=BORDER,
+                mirror=True,
+                tickfont=dict(color=INK, size=14),
+                title_font=dict(color=INK, size=18),
+            ),
+            yaxis=dict(
+                showgrid=False,
+                zeroline=False,
+                showline=True,
+                linewidth=1,
+                linecolor=BORDER,
+                mirror=True,
+                tickfont=dict(color=INK, size=14),
+                title_font=dict(color=INK, size=18),
+            ),
+        )
+        st.plotly_chart(growth_fig, use_container_width=True)
 
 with context_col:
-    st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    st.markdown("### Model Summary")
-    st.markdown(
-        f"""
-        - Starting values: Tax-Aware Portfolio {currency(start_deferred)} and Non-Tax-Aware Portfolio {currency(start_taxable)}
-        - Gross return assumption: {percent(annual_return_pct)}
-        - Horizon: {years} years
-        - Annual turnover in Non-Tax-Aware Portfolio: {percent(turnover_pct)}
-        - Combined capital gains tax rate: {percent(combined_tax_rate_pct)}
-        - Approximate annualized tax drag: {tax_drag_bps:,.0f} bps
-        """
-    )
-    st.markdown("### Assumption Notes")
-    st.markdown(
-        """
-        - Taxes are paid at year-end only in the Non-Tax-Aware Portfolio.
-        - Realized gains are modeled on a pro-rata basis using the account's embedded appreciation at the time of sale.
-        - The Tax-Aware Portfolio assumes no interim capital gains realization.
-        - This version does not force liquidation at the end of the horizon, so it emphasizes the value of tax deferral during the holding period.
-        """
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
+    with section_card():
+        st.markdown("### Model Summary")
+        st.markdown(
+            f"""
+            - Starting values: Tax-Aware Portfolio {currency(start_deferred)} and Non-Tax-Aware Portfolio {currency(start_taxable)}
+            - Gross return assumption: {percent(annual_return_pct)}
+            - Horizon: {years} years
+            - Annual turnover in Non-Tax-Aware Portfolio: {percent(turnover_pct)}
+            - Combined capital gains tax rate: {percent(combined_tax_rate_pct)}
+            - Approximate annualized tax drag: {tax_drag_bps:,.0f} bps
+            """
+        )
+        st.markdown("### Assumption Notes")
+        st.markdown(
+            """
+            - Taxes are paid at year-end only in the Non-Tax-Aware Portfolio.
+            - Realized gains are modeled on a pro-rata basis using the account's embedded appreciation at the time of sale.
+            - The Tax-Aware Portfolio assumes no interim capital gains realization.
+            - This version does not force liquidation at the end of the horizon, so it emphasizes the value of tax deferral during the holding period.
+            """
+        )
 
 
 bottom_left, bottom_right = st.columns([1.4, 1])
 
 with bottom_left:
-    st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    st.markdown("### Tax Drag Over Time")
-    gap_fig = go.Figure()
-    gap_fig.add_trace(
-        go.Bar(
-            x=comparison_df["Year"],
-            y=comparison_df["Value Gap"],
-            name="Tax-Aware wealth advantage",
-            marker_color=ACCENT_ALT,
+    with section_card():
+        st.markdown("### Tax Drag Over Time")
+        gap_fig = go.Figure()
+        gap_fig.add_trace(
+            go.Bar(
+                x=comparison_df["Year"],
+                y=comparison_df["Value Gap"],
+                name="Tax-Aware wealth advantage",
+                marker_color=ACCENT_ALT,
+            )
         )
-    )
-    gap_fig.update_layout(
-        height=360,
-        margin=dict(l=10, r=10, t=50, b=10),
-        paper_bgcolor="#FFFFFF",
-        plot_bgcolor="#FFFFFF",
-        xaxis_title="Year",
-        yaxis_title="Value Difference ($)",
-        yaxis_tickprefix="$",
-        font=dict(color=INK),
-        legend=dict(
-            yanchor="bottom",
-            y=1.06,
-            xanchor="left",
-            x=0,
-            bgcolor="rgba(255,255,255,0)",
-            borderwidth=0,
+        gap_fig.update_layout(
+            height=360,
+            margin=dict(l=10, r=10, t=50, b=10),
+            paper_bgcolor="#FFFFFF",
+            plot_bgcolor="#FFFFFF",
+            xaxis_title="Year",
+            yaxis_title="Value Difference ($)",
+            yaxis_tickprefix="$",
             font=dict(color=INK),
-        ),
-        xaxis=dict(showgrid=False, zeroline=False, showline=True, linewidth=1, linecolor=BORDER, mirror=True),
-        yaxis=dict(showgrid=False, zeroline=False, showline=True, linewidth=1, linecolor=BORDER, mirror=True),
-    )
-    st.plotly_chart(gap_fig, use_container_width=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+            legend=dict(
+                yanchor="bottom",
+                y=1.06,
+                xanchor="left",
+                x=0,
+                bgcolor="rgba(255,255,255,0)",
+                borderwidth=0,
+                font=dict(color=INK, size=14),
+            ),
+            xaxis=dict(
+                showgrid=False,
+                zeroline=False,
+                showline=True,
+                linewidth=1,
+                linecolor=BORDER,
+                mirror=True,
+                tickfont=dict(color=INK, size=14),
+                title_font=dict(color=INK, size=18),
+            ),
+            yaxis=dict(
+                showgrid=False,
+                zeroline=False,
+                showline=True,
+                linewidth=1,
+                linecolor=BORDER,
+                mirror=True,
+                tickfont=dict(color=INK, size=14),
+                title_font=dict(color=INK, size=18),
+            ),
+        )
+        st.plotly_chart(gap_fig, use_container_width=True)
 
 with bottom_right:
-    st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    st.markdown("### Cumulative Taxes")
-    tax_fig = go.Figure()
-    tax_fig.add_trace(
-        go.Scatter(
-            x=comparison_df["Year"],
-            y=comparison_df["Cumulative Taxes Paid"],
-            mode="lines+markers",
-            name="Taxes paid",
-            line=dict(color=SUCCESS, width=3),
-        )
-    )
-    if show_basis:
+    with section_card():
+        st.markdown("### Cumulative Taxes")
+        tax_fig = go.Figure()
         tax_fig.add_trace(
             go.Scatter(
                 x=comparison_df["Year"],
-                y=comparison_df["Taxable Cost Basis"],
-                mode="lines",
-                name="Non-Tax-Aware cost basis",
-                line=dict(color=ACCENT_ALT, width=2, dash="dash"),
+                y=comparison_df["Cumulative Taxes Paid"],
+                mode="lines+markers",
+                name="Taxes paid",
+                line=dict(color=SUCCESS, width=3),
             )
         )
-    tax_fig.update_layout(
-        height=360,
-        margin=dict(l=10, r=10, t=50, b=10),
-        paper_bgcolor="#FFFFFF",
-        plot_bgcolor="#FFFFFF",
-        xaxis_title="Year",
-        yaxis_title="Dollars ($)",
-        yaxis_tickprefix="$",
-        font=dict(color=INK),
-        legend=dict(
-            yanchor="bottom",
-            y=1.06,
-            xanchor="left",
-            x=0,
-            bgcolor="rgba(255,255,255,0)",
-            borderwidth=0,
+        if show_basis:
+            tax_fig.add_trace(
+                go.Scatter(
+                    x=comparison_df["Year"],
+                    y=comparison_df["Taxable Cost Basis"],
+                    mode="lines",
+                    name="Non-Tax-Aware cost basis",
+                    line=dict(color=ACCENT_ALT, width=2, dash="dash"),
+                )
+            )
+        tax_fig.update_layout(
+            height=360,
+            margin=dict(l=10, r=10, t=50, b=10),
+            paper_bgcolor="#FFFFFF",
+            plot_bgcolor="#FFFFFF",
+            xaxis_title="Year",
+            yaxis_title="Dollars ($)",
+            yaxis_tickprefix="$",
             font=dict(color=INK),
-        ),
-        xaxis=dict(showgrid=False, zeroline=False, showline=True, linewidth=1, linecolor=BORDER, mirror=True),
-        yaxis=dict(showgrid=False, zeroline=False, showline=True, linewidth=1, linecolor=BORDER, mirror=True),
-    )
-    st.plotly_chart(tax_fig, use_container_width=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+            legend=dict(
+                yanchor="bottom",
+                y=1.06,
+                xanchor="left",
+                x=0,
+                bgcolor="rgba(255,255,255,0)",
+                borderwidth=0,
+                font=dict(color=INK, size=14),
+            ),
+            xaxis=dict(
+                showgrid=False,
+                zeroline=False,
+                showline=True,
+                linewidth=1,
+                linecolor=BORDER,
+                mirror=True,
+                tickfont=dict(color=INK, size=14),
+                title_font=dict(color=INK, size=18),
+            ),
+            yaxis=dict(
+                showgrid=False,
+                zeroline=False,
+                showline=True,
+                linewidth=1,
+                linecolor=BORDER,
+                mirror=True,
+                tickfont=dict(color=INK, size=14),
+                title_font=dict(color=INK, size=18),
+            ),
+        )
+        st.plotly_chart(tax_fig, use_container_width=True)
 
 
 if show_table:
-    st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    st.markdown("### Year-by-Year Detail")
-    display_df = comparison_df[
-        [
-            "Year",
-            "Deferred Account Value",
-            "Taxable Account Value",
-            "Value Gap",
-            "Taxes Paid This Year",
-            "Cumulative Taxes Paid",
-            "Taxable Cost Basis",
-        ]
-    ].copy()
-    display_df = display_df.rename(
-        columns={
-            "Deferred Account Value": "Tax-Aware Portfolio",
-            "Taxable Account Value": "Non-Tax-Aware Portfolio",
-            "Taxable Cost Basis": "Non-Tax-Aware Cost Basis",
-        }
-    )
-
-    st.dataframe(
-        display_df.style.format(
-            {
-                "Tax-Aware Portfolio": "${:,.0f}",
-                "Non-Tax-Aware Portfolio": "${:,.0f}",
-                "Value Gap": "${:,.0f}",
-                "Taxes Paid This Year": "${:,.0f}",
-                "Cumulative Taxes Paid": "${:,.0f}",
-                "Non-Tax-Aware Cost Basis": "${:,.0f}",
-            }
-        ).set_table_styles(
+    with section_card():
+        st.markdown("### Year-by-Year Detail")
+        display_df = comparison_df[
             [
-                {"selector": "th", "props": [("border", "none"), ("background-color", "#FFFFFF")]},
-                {"selector": "td", "props": [("border", "none"), ("background-color", "#FFFFFF")]},
-                {"selector": "table", "props": [("border-collapse", "separate"), ("background-color", "#FFFFFF")]},
+                "Year",
+                "Deferred Account Value",
+                "Taxable Account Value",
+                "Value Gap",
+                "Taxes Paid This Year",
+                "Cumulative Taxes Paid",
+                "Taxable Cost Basis",
             ]
-        ),
-        use_container_width=True,
-        hide_index=True,
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
+        ].copy()
+        display_df = display_df.rename(
+            columns={
+                "Deferred Account Value": "Tax-Aware Portfolio",
+                "Taxable Account Value": "Non-Tax-Aware Portfolio",
+                "Taxable Cost Basis": "Non-Tax-Aware Cost Basis",
+            }
+        )
+
+        st.dataframe(
+            display_df.style.format(
+                {
+                    "Tax-Aware Portfolio": "${:,.0f}",
+                    "Non-Tax-Aware Portfolio": "${:,.0f}",
+                    "Value Gap": "${:,.0f}",
+                    "Taxes Paid This Year": "${:,.0f}",
+                    "Cumulative Taxes Paid": "${:,.0f}",
+                    "Non-Tax-Aware Cost Basis": "${:,.0f}",
+                }
+            ).set_table_styles(
+                [
+                    {"selector": "th", "props": [("border", "none"), ("background-color", "#FFFFFF")]},
+                    {"selector": "td", "props": [("border", "none"), ("background-color", "#FFFFFF")]},
+                    {"selector": "table", "props": [("border-collapse", "separate"), ("background-color", "#FFFFFF")]},
+                ]
+            ),
+            use_container_width=True,
+            hide_index=True,
+        )
